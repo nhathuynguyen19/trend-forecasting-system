@@ -11,18 +11,9 @@
 .DS_Store
 Thumbs.db
 
-# Node.js (Frontend)
-node_modules/
-dist/
-dist-ssr/
-*.local
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-.eslintcache
-
-# Java (Gradle & Maven)
+# Java (Flink Processor)
+flink-processor/build/
+flink-processor/.gradle/
 .gradle/
 build/
 bin/
@@ -37,7 +28,18 @@ target/
 .project
 .settings/
 
-# Python (Ingestion & AI Worker)
+# Node.js
+node_modules/
+dist/
+dist-ssr/
+*.local
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.eslintcache
+
+# Python
 __pycache__/
 *.py[cod]
 *$py.class
@@ -51,7 +53,7 @@ env/
 poetry.toml
 
 # Databases and Local infrastructure
-infra/local-dev/data/
+infrastructure/data/
 *.db
 *.sqlite
 
@@ -61,3 +63,5 @@ infra/local-dev/data/
 .env.development.local
 .env.test.local
 .env.production.local
+**/local.properties
+**/secrets.properties

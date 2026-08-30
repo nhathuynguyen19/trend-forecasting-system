@@ -33,17 +33,22 @@ services:
     volumes:
       - redis-data:/data
 
-  timescaledb:
-    image: timescale/timescaledb:latest-pg15
-    container_name: trend-pulse-timescaledb
+  clickhouse:
+    image: clickhouse/clickhouse-server:latest
+    container_name: trend-pulse-clickhouse
     ports:
-      - "${TIMESCALEDB_PORT:-5432}:5432"
+      - "8123:8123"
+      - "9000:9000"
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-postgres}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres_pwd}
-      POSTGRES_DB: ${POSTGRES_DB:-trendpulse}
+      CLICKHOUSE_DB: trend_db
+      CLICKHOUSE_USER: default
+      CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT: 1
+    ulimits:
+      nofile:
+        soft: 262144
+        hard: 262144
     volumes:
-      - timescale-data:/var/lib/postgresql/data
+      - clickhouse-data:/var/lib/clickhouse
 
   qdrant:
     image: qdrant/qdrant:latest
@@ -57,5 +62,5 @@ services:
 volumes:
   kafka-data:
   redis-data:
-  timescale-data:
+  clickhouse-data:
   qdrant-data:

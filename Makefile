@@ -1,12 +1,12 @@
 .PHONY: infra-up infra-down clean
 
-# Start local infrastructure (Kafka, Redis, TimescaleDB, Qdrant)
+# Start local infrastructure (Kafka, Redis, ClickHouse, Qdrant)
 infra-up:
-	docker-compose -f infra/local-dev/docker-compose.yml up -d
+	docker-compose -f infrastructure/docker-compose.yml up -d
 
 # Stop local infrastructure
 infra-down:
-	docker-compose -f infra/local-dev/docker-compose.yml down
+	docker-compose -f infrastructure/docker-compose.yml down
 
 # Clean build artifacts
 clean:
