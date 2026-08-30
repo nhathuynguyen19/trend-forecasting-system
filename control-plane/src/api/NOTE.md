@@ -1,52 +1,24 @@
-# 📝 API Layer Guidelines (Tầng Tiếp nhận HTTP Request)
+# API Layer Guidelines
 
-**Mục tiêu:** Đây là "Cửa ngõ" của hệ thống (Controller). Nhiệm vụ duy nhất của nó là tiếp nhận HTTP Request từ giao diện Admin (UI), bóc tách dữ liệu gửi xuống tầng `services`, và trả về HTTP Response cho người dùng. 
+**Nhiệm vụ cốt lõi:** Đóng vai trò là "Cửa ngõ" (Controller) duy nhất giao tiếp với giao diện người dùng (Admin UI). Chịu trách nhiệm bóc tách dữ liệu từ HTTP Request, ủy quyền xử lý cho tầng Service, và định dạng HTTP Response trả về. 
 
-**Tuyệt đối KHÔNG chứa business logic, KHÔNG validate nghiệp vụ sâu và KHÔNG gọi trực tiếp hạ tầng (Kafka/DB) ở đây.**
+**Tuyệt đối KHÔNG chứa business logic, KHÔNG tự validate nghiệp vụ sâu và KHÔNG kết nối trực tiếp với Kafka hay cơ sở dữ liệu tại tầng này.**
 
-## 🎯 3 Yêu cầu cốt lõi (Bắt buộc)
+**Các quy tắc và điều kiện bắt buộc:**
 
-1. **Thin Controller (Controller siêu mỏng):** 
-   - Hàm xử lý API (Route handler) chỉ nên dài tối đa 10-15 dòng.
-   - Nhiệm vụ duy nhất: Lấy data từ `req.body` -> Gọi hàm của Service -> Trả kết quả `res.json()`.
-   
-2. **Chuẩn hoá HTTP Status Code:** 
-   - Thành công: Trả về `200 OK` hoặc `201 Created`.
-   - Lỗi từ người dùng (nhập sai): Bắt lỗi từ tầng Service và map thành `400 Bad Request`.
-   - Lỗi hệ thống (Kafka sập): Bắt lỗi và map thành `500 Internal Server Error`.
+1. **Nguyên tắc Thin Controller:**
+   - Các hàm xử lý (Route handlers) chỉ được phép thực hiện đúng 3 bước: Trích xuất dữ liệu từ `req.body` ➔ Truyền nguyên trạng xuống cho hàm của thư mục `services` ➔ Nhận kết quả từ Service để gửi phản hồi (`res.json`).
+   - Tầng này đóng vai trò "người đưa thư", mọi logic nhào nặn dữ liệu phải nhường lại cho Service.
 
-3. **Global Error Handling (Bắt lỗi an toàn):**
-   - Mọi route phải được bọc trong `try/catch` (hoặc dùng middleware gom lỗi). 
-   - Tuyệt đối không được để một request lỗi làm sập (crash) toàn bộ server Control Plane.
+2. **Bắt lỗi an toàn (Global Error Handling):**
+   - Tất cả các endpoint bắt buộc phải được bọc trong khối `try/catch` hoặc thông qua một middleware xử lý lỗi tập trung.
+   - Tuyệt đối không được để một request lỗi (do dữ liệu rác từ client hoặc do sập kết nối Kafka) làm sập (crash) toàn bộ tiến trình Control Plane.
 
-## 💻 Mã giả định hướng (Express.js / Node.js style)
+3. **Quy chuẩn mã phản hồi (HTTP Status Codes):**
+   - **Thành công:** Phải trả về mã `200 OK` (hoặc `201 Created`) kèm theo payload kết quả từ Service.
+   - **Lỗi từ người dùng (Client Error):** Phải chủ động bắt các lỗi có định danh do tầng Service ném ra (ví dụ: lỗi trống từ khóa, lỗi sai nền tảng). Chuyển đổi các lỗi này thành mã `400 Bad Request` kèm thông báo rõ ràng để UI hiển thị.
+   - **Lỗi hệ thống (Server Error):** Với các lỗi kết nối hạ tầng (Kafka rớt mạng) hoặc lỗi không xác định, bắt buộc phải log lại lỗi chi tiết vào hệ thống (console/file) và trả về cho client mã `500 Internal Server Error`. Tuyệt đối không rò rỉ chi tiết mã lỗi (stack trace) ra ngoài giao diện.
 
-```javascript
-// control-plane/src/api/taskController.js
-const taskService = require('../services/taskService');
-
-async function createCrawlTask(req, res, next) {
-    try {
-        // 1. Chỉ bóc tách dữ liệu từ HTTP Request
-        const { platform, keyword, since } = req.body;
-
-        // 2. Đẩy toàn bộ cho tầng Service lo liệu
-        const result = await taskService.handleCrawlRequest(platform, keyword, since);
-
-        // 3. Trả về Response thành công
-        res.status(200).json(result);
-
-    } catch (error) {
-        // 4. Phân loại lỗi để trả về HTTP Status chuẩn
-        if (error.message.includes("not supported") || error.message.includes("empty")) {
-            // Lỗi do Admin nhập sai
-            return res.status(400).json({ error: error.message });
-        }
-        
-        // Lỗi hệ thống (Kafka lỗi mạng, lỗi code...)
-        console.error("System Error:", error);
-        res.status(500).json({ error: "Internal Server Error. Please try again later." });
-    }
-}
-
-module.exports = { createCrawlTask };
+4. **Đồng nhất trường dữ liệu:**
+   - Khi bóc tách `req.body`, phải đảm bảo lấy đủ 3 tham số từ giao diện: `platform`, `keyword`, và `since`. 
+   - Tham số thời gian ở tầng này vẫn giữ tên là `since` (do giao diện truyền lên) và truyền thẳng xuống cho tầng Service. Việc chuẩn hóa và đổi tên thành `baseline_since` là trách nhiệm của Service, API không cần can thiệp.
