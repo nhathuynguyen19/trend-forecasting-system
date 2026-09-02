@@ -7,6 +7,6 @@ services:
     env_file:
       - .env
     volumes:
-      - .:/app
+      - .:/app:z
     environment:
       TZ: Asia/Ho_Chi_Minh
