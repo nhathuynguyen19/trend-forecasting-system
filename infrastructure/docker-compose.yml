@@ -22,6 +22,19 @@ services:
     volumes:
       - kafka-data:/var/lib/kafka/data
 
+  kafka-ui:
+      image: provectuslabs/kafka-ui:latest
+      container_name: kafka-ui
+      ports:
+        - "8081:8080" # Có thể đổi số 8080 đầu tiên nếu cổng này đã bị trùng
+      environment:
+        - KAFKA_CLUSTERS_0_NAME=TrendPulse-Cluster
+        # Thay 'kafka' bằng đúng tên service kafka của bạn trong file docker-compose
+        - KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS=kafka:29092
+        - DYNAMIC_CONFIG_ENABLED=true
+      depends_on:
+        - kafka # Đảm bảo Kafka chạy trước
+
   redis:
     image: redis:7.0-alpine
     container_name: trend-pulse-redis

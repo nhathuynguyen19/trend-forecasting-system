@@ -91,7 +91,7 @@ docker-compose -f infrastructure/docker-compose.yml logs kafka
 
 ```bash
 # Đăng nhập vào container Kafka
-docker exec -it trend-pulse-kafka kafka-topics.sh \
+docker exec -it trend-pulse-kafka /usr/bin/kafka-topics \
   --bootstrap-server localhost:9092 \
   --create \
   --topic social.posts.raw \
@@ -204,6 +204,22 @@ infrastructure/
 - **Thay đổi partition** — chỉ tăng, không giảm được sau khi tạo topic
 - **RF=1 không có failover** — dành cho dev, không dùng cho production
 - **KRaft mode** — không cần ZooKeeper, đơn giản hơn nhưng cần lưu ý `controller.quorum.voters`
+
+## Hướng dẫn sử dụng UI
+
+Giao diện Kafka UI rất trực quan. Dưới đây là các thao tác cốt lõi bạn sẽ dùng thường xuyên trong quá trình phát triển dự án:
+
+* **Xem thông tin Topic:** Chọn mục **Topics** ở thanh điều hướng bên trái. Bạn sẽ thấy topic `social.posts.raw` vừa tạo. Click vào để xem chi tiết cấu hình, dung lượng, và trạng thái của 3 partition.
+* **Gửi dữ liệu mẫu (Produce):** Trong màn hình chi tiết của một topic, nhấn nút **Produce Message** ở góc trên bên phải. Ở ô *Value*, bạn có thể nhập thử một chuỗi JSON mẫu, ví dụ:
+```json
+{"platform": "twitter", "keyword": "technology", "sentiment_score": 0.8}
+
+```
+
+
+Sau đó nhấn **Produce** để đẩy thẳng dữ liệu vào Kafka.
+* **Đọc dữ liệu thực tế (Consume):** Chuyển sang tab **Messages** bên trong topic đó. Tại đây, bạn có thể xem trực tiếp toàn bộ luồng dữ liệu (stream) đang tồn tại trong hệ thống. Bạn có thể lọc tin nhắn theo mốc thời gian, xem dữ liệu cũ nhất, hoặc xem theo thời gian thực (Live).
+* **Giám sát Consumer (Consumer Groups):** Tab **Consumers** cho phép bạn theo dõi các ứng dụng backend đang kết nối vào Kafka để xử lý dữ liệu. Nó giúp bạn phát hiện ứng dụng nào đang bị quá tải hoặc xử lý chậm (hiện tượng Consumer Lag).
 
 ## 📚 Tài liệu tham khảo
 
